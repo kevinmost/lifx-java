@@ -2,12 +2,12 @@ dependencies {
   compile(
       "com.squareup.okhttp3:okhttp:$versions.okhttp",
       "com.google.code.gson:gson:2.7",
+      'javax.validation:validation-api:1.1.0.Final',
   )
   compileOnly(
       deps.nullityAnnotations,
       "com.jakewharton.auto.value:auto-value-annotations:$versions.autoValue",
       "com.github.kevinmost.auto-value-custom-hashcode-equals:adapter:$versions.customHashCodeEquals",
-      'javax.validation:validation-api:1.1.0.Final',
   )
   apt(
       "com.google.auto.value:auto-value:$versions.autoValue",
