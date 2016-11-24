@@ -11,7 +11,9 @@ public final class AutoValueTypeAdapterFactory implements TypeAdapterFactory {
 
   private static final String AUTO_VALUE_CLASS_PREFIX = "AutoValue_";
 
-  @Override public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> typeToken) {
+  @SuppressWarnings("unchecked")
+  @Override
+  public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> typeToken) {
     final Type type = typeToken.getType();
     if (!(type instanceof Class)) {
       return null;
@@ -22,7 +24,6 @@ public final class AutoValueTypeAdapterFactory implements TypeAdapterFactory {
     }
     try {
       final Class<?> nonAutoValueType = Class.forName(typeName.replace(AUTO_VALUE_CLASS_PREFIX, ""));
-      //noinspection unchecked
       return ((TypeAdapter<T>) gson.getAdapter(nonAutoValueType));
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException("Tried to get the non-AutoValue version of " + typeName, e);
