@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/core.iml" filepath="$PROJECT_DIR$/.idea/modules/core/core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlin/kotlin.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlin/kotlin.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/lifx-api.iml" filepath="$PROJECT_DIR$/.idea/modules/lifx-api.iml" />
     </modules>
   </component>

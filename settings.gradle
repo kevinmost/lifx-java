@@ -1,3 +1,4 @@
 rootProject.name = 'lifx-api'
 include 'core'
+include 'kotlin'
 
