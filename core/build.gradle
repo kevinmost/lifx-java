@@ -1,0 +1,36 @@
+plugins {
+  id "java"
+  id "maven"
+  id "idea"
+
+  id "net.ltgt.apt" version "0.7"
+}
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+dependencies {
+  compile(
+      "com.squareup.okhttp3:okhttp:$versions.okhttp",
+      "com.google.code.gson:gson:2.7",
+  )
+  compileOnly(
+      deps.nullityAnnotations,
+      "com.jakewharton.auto.value:auto-value-annotations:$versions.autoValue",
+      "com.github.kevinmost.auto-value-custom-hashcode-equals:adapter:$versions.customHashCodeEquals",
+      'javax.validation:validation-api:1.1.0.Final',
+  )
+  apt(
+      "com.google.auto.value:auto-value:$versions.autoValue",
+      "com.github.kevinmost.auto-value-custom-hashcode-equals:processor:$versions.customHashCodeEquals",
+  )
+
+  testCompile(
+      deps.nullityAnnotations,
+      "junit:junit:4.12",
+
+      "org.slf4j:slf4j-api:$versions.slf4j",
+      "org.slf4j:slf4j-simple:$versions.slf4j",
+
+      "com.squareup.okhttp3:logging-interceptor:$versions.okhttp",
+  )
+}
