@@ -13,6 +13,10 @@ import com.kevinmost.internal.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import java.lang.reflect.Type;
 
 import static com.kevinmost.internal.Util.clamp;
@@ -22,15 +26,24 @@ import static com.kevinmost.internal.Util.round;
 @JsonAdapter(LifxColor.Adapter.class)
 public abstract class LifxColor {
 
-  @NotNull public static White createKelvin(int kelvin) {
+  @NotNull public static White createKelvin(@Min(White.KELVIN_MIN) @Max(White.KELVIN_MAX) int kelvin) {
     return White.forKelvin(kelvin);
   }
 
-  @NotNull public static RGB createRGB(int r, int g, int b) {
+  @NotNull
+  public static RGB createRGB(
+      @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int r,
+      @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int g,
+      @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int b
+  ) {
     return RGB.create(r, g, b);
   }
 
-  @NotNull public static HSV createHSV(int hue, double saturation, double brightness) {
+  @NotNull public static HSV createHSV(
+      @Min(HSV.HUE_MIN) @Max(HSV.HUE_MAX) int hue,
+      @DecimalMin(HSV.SATURATION_MIN) @DecimalMax(HSV.SATURATION_MAX) double saturation,
+      @DecimalMin(HSV.BRIGHTNESS_MIN) @DecimalMax(HSV.BRIGHTNESS_MAX) double brightness
+  ) {
     return HSV.create(hue, saturation, brightness);
   }
 
@@ -45,7 +58,7 @@ public abstract class LifxColor {
     public static final int KELVIN_MAX = 9000;
     public static final int KELVIN_MIN = 2500;
 
-    @NotNull public static White forKelvin(int kelvin) {
+    @NotNull public static White forKelvin(@Min(KELVIN_MIN) @Max(KELVIN_MAX) int kelvin) {
       if (kelvin < KELVIN_MIN || kelvin > KELVIN_MAX) {
         throw new IllegalArgumentException(String.format("Kelvin must be between %d and %d. Provided Kelvin was %d",
             KELVIN_MIN,
@@ -101,6 +114,7 @@ public abstract class LifxColor {
     /**
      * @return the temperature of this shade of white, in kelvin
      */
+    @Min(KELVIN_MIN) @Max(KELVIN_MAX)
     public abstract int kelvin();
 
     White() {} // AutoValue instances only
@@ -132,7 +146,15 @@ public abstract class LifxColor {
   @JsonAdapter(RGB.Adapter.class)
   public static abstract class RGB extends LifxColor {
 
-    @NotNull public static RGB create(int r, int g, int b) {
+    public static final int RGB_MIN = 0;
+    public static final int RGB_MAX = 255;
+
+    @NotNull
+    public static RGB create(
+        @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int r,
+        @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int g,
+        @Min(RGB.RGB_MIN) @Max(RGB.RGB_MAX) int b
+    ) {
       Util.assertRange("r", r, 0, 255);
       Util.assertRange("g", g, 0, 255);
       Util.assertRange("b", b, 0, 255);
@@ -174,14 +196,17 @@ public abstract class LifxColor {
     /**
      * @return the red component of this color, from 0 - 255
      */
+    @Min(RGB_MIN) @Max(RGB_MAX)
     public abstract int r();
     /**
      * @return the green component of this color, from 0 - 255
      */
+    @Min(RGB_MIN) @Max(RGB_MAX)
     public abstract int g();
     /**
      * @return the blue component of this color, from 0 - 255
      */
+    @Min(RGB_MIN) @Max(RGB_MAX)
     public abstract int b();
 
     RGB() {} // AutoValue instances only
@@ -211,7 +236,19 @@ public abstract class LifxColor {
   @JsonAdapter(HSV.Adapter.class)
   public static abstract class HSV extends LifxColor {
 
-    @NotNull public static HSV create(int hue, double saturation, double brightness) {
+    public static final int HUE_MIN = 0;
+    public static final int HUE_MAX = 360;
+    public static final String SATURATION_MIN = "0.0";
+    public static final String SATURATION_MAX = "1.0";
+    public static final String BRIGHTNESS_MIN = "0.0";
+    public static final String BRIGHTNESS_MAX = "1.0";
+
+
+    @NotNull public static HSV create(
+        @Min(HSV.HUE_MIN) @Max(HSV.HUE_MAX) int hue,
+        @DecimalMin(HSV.SATURATION_MIN) @DecimalMax(HSV.SATURATION_MAX) double saturation,
+        @DecimalMin(HSV.BRIGHTNESS_MIN) @DecimalMax(HSV.BRIGHTNESS_MAX) double brightness
+    ) {
       Util.assertRange("hue", hue, 0, 360);
       Util.assertRange("saturation", saturation, 0, 1);
       Util.assertRange("brightness", brightness, 0, 1);
@@ -280,14 +317,17 @@ public abstract class LifxColor {
     /**
      * @return the hue of this color, from 0 - 360
      */
+    @Min(HUE_MIN) @Max(HUE_MAX)
     public abstract int hue();
     /**
      * @return the saturation of this color, from 0.0 - 1.0
      */
+    @DecimalMin(SATURATION_MIN) @DecimalMax(SATURATION_MAX)
     public abstract double saturation();
     /**
      * @return the brightness of this color, from 0.0 - 1.0
      */
+    @DecimalMin(SATURATION_MIN) @DecimalMax(SATURATION_MAX)
     public abstract double brightness();
 
     HSV() {} // AutoValue instances only
