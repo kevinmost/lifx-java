@@ -131,6 +131,7 @@ public abstract class Operation {
       final Double infraredBrightness = root.has("infrared") ? root.get("infrared").getAsDouble() : null;
 
       return new AutoValue_Operation.Builder()
+          .selector(Selector.unsafe(root.get("selector").getAsString()))
           .powerState(powerState)
           .color(color)
           .brightness(brightness)
