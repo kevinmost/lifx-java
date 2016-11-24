@@ -19,29 +19,39 @@ import static com.kevinmost.internal.Util.assertRange;
 import static com.kevinmost.internal.Util.clamp;
 import static com.kevinmost.internal.Util.posModulo;
 import static com.kevinmost.internal.Util.round;
+import static com.kevinmost.lifx.model.LifxColor.HSV.BRIGHTNESS_MAX;
+import static com.kevinmost.lifx.model.LifxColor.HSV.BRIGHTNESS_MIN;
+import static com.kevinmost.lifx.model.LifxColor.HSV.HUE_MAX;
+import static com.kevinmost.lifx.model.LifxColor.HSV.HUE_MIN;
+import static com.kevinmost.lifx.model.LifxColor.HSV.SATURATION_MAX;
+import static com.kevinmost.lifx.model.LifxColor.HSV.SATURATION_MIN;
+import static com.kevinmost.lifx.model.LifxColor.RGB.RGB_MAX;
+import static com.kevinmost.lifx.model.LifxColor.RGB.RGB_MIN;
+import static com.kevinmost.lifx.model.LifxColor.White.KELVIN_MAX;
+import static com.kevinmost.lifx.model.LifxColor.White.KELVIN_MIN;
 
 @JsonAdapter(LifxColor.Adapter.class)
 public abstract class LifxColor {
 
-  @NotNull public static White createKelvin(int kelvin) {
-    return White.forKelvin(kelvin);
+  @NotNull public static White createWhite(int kelvin) {
+    Util.assertRange("kelvin", kelvin, KELVIN_MIN, KELVIN_MAX);
+    return new AutoValue_LifxColor_White(kelvin);
   }
 
   @NotNull
-  public static RGB createRGB(
-      int r,
-      int g,
-      int b
-  ) {
-    return RGB.create(r, g, b);
+  public static RGB createRGB(int r, int g, int b) {
+    assertRange("r", r, RGB_MIN, RGB_MAX);
+    assertRange("g", g, RGB_MIN, RGB_MAX);
+    assertRange("b", b, RGB_MIN, RGB_MAX);
+    return new AutoValue_LifxColor_RGB(r, g, b);
   }
 
-  @NotNull public static HSV createHSV(
-      int hue,
-      double saturation,
-      double brightness
-  ) {
-    return HSV.create(hue, saturation, brightness);
+  @NotNull public static HSV createHSV(int hue, double saturation, double brightness) {
+    assertRange("hue", hue, HUE_MIN, HUE_MAX);
+    assertRange("saturation", saturation, SATURATION_MIN, SATURATION_MAX);
+    assertRange("brightness", brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX);
+    // LiFX API only deals with these decimals to 2 places
+    return new AutoValue_LifxColor_HSV(hue, Util.roundTo2Places(saturation), Util.roundTo2Places(brightness));
   }
 
   @NotNull public abstract String toString();
@@ -54,11 +64,6 @@ public abstract class LifxColor {
 
     public static final int KELVIN_MAX = 9000;
     public static final int KELVIN_MIN = 2500;
-
-    @NotNull public static White forKelvin(int kelvin) {
-      assertRange("kelvin", kelvin, KELVIN_MIN, KELVIN_MAX);
-      return new AutoValue_LifxColor_White(kelvin);
-    }
 
     /**
      * @return an approximation of this color temperature in RGB
@@ -90,7 +95,7 @@ public abstract class LifxColor {
       } else {
         blue = round(clamp(138.5177312231 * Math.log(temp - 10) - 305.0447927307, 0, 255));
       }
-      return RGB.create(red, green, blue);
+      return createRGB(red, green, blue);
     }
 
     /**
@@ -126,7 +131,7 @@ public abstract class LifxColor {
         } else {
           kelvin = (int) Double.parseDouble(json.getAsString().replace("kelvin:", ""));
         }
-        return forKelvin(kelvin);
+        return createWhite(kelvin);
       }
     }
   }
@@ -138,18 +143,6 @@ public abstract class LifxColor {
 
     public static final int RGB_MIN = 0;
     public static final int RGB_MAX = 255;
-
-    @NotNull
-    public static RGB create(
-        int r,
-        int g,
-        int b
-    ) {
-      assertRange("r", r, 0, 255);
-      assertRange("g", g, 0, 255);
-      assertRange("b", b, 0, 255);
-      return new AutoValue_LifxColor_RGB(r, g, b);
-    }
 
     @Override @NotNull public final HSV toHSV() {
       final double rPrime = r() / 255.0;
@@ -180,7 +173,7 @@ public abstract class LifxColor {
       //noinspection UnnecessaryLocalVariable
       final double brightness = cMax;
 
-      return HSV.create(hue, saturation, brightness);
+      return createHSV(hue, saturation, brightness);
     }
 
     /**
@@ -213,7 +206,7 @@ public abstract class LifxColor {
         final int r = Integer.parseInt(components[0]);
         final int g = Integer.parseInt(components[1]);
         final int b = Integer.parseInt(components[2]);
-        return create(r, g, b);
+        return createRGB(r, g, b);
       }
     }
   }
@@ -225,23 +218,11 @@ public abstract class LifxColor {
 
     public static final int HUE_MIN = 0;
     public static final int HUE_MAX = 360;
-    public static final String SATURATION_MIN = "0.0";
-    public static final String SATURATION_MAX = "1.0";
-    public static final String BRIGHTNESS_MIN = "0.0";
-    public static final String BRIGHTNESS_MAX = "1.0";
+    public static final double SATURATION_MIN = 0.0;
+    public static final double SATURATION_MAX = 1.0;
+    public static final double BRIGHTNESS_MIN = 0.0;
+    public static final double BRIGHTNESS_MAX = 1.0;
 
-
-    @NotNull public static HSV create(
-        int hue,
-        double saturation,
-        double brightness
-    ) {
-      assertRange("hue", hue, 0, 360);
-      assertRange("saturation", saturation, 0, 1);
-      assertRange("brightness", brightness, 0, 1);
-      // LiFX API only deals with these decimals to 2 places
-      return new AutoValue_LifxColor_HSV(hue, Util.roundTo2Places(saturation), Util.roundTo2Places(brightness));
-    }
 
     /**
      * @return an RGB approximation of this color. WARNING: RGB is a poor approximation of the HSV color space, so
@@ -294,7 +275,7 @@ public abstract class LifxColor {
       final double g = g1 + m;
       final double b = b1 + m;
 
-      return RGB.create(round(255 * r), round(255 * g), round(255 * b));
+      return createRGB(round(255 * r), round(255 * g), round(255 * b));
     }
 
     @NotNull @Override public HSV toHSV() {
@@ -342,7 +323,7 @@ public abstract class LifxColor {
             throw new IllegalArgumentException("There is no brightness in this color JSON. JSON: " + json);
           }
         }
-        return HSV.create(hue, saturation, brightness);
+        return createHSV(hue, saturation, brightness);
       }
 
       @Override public JsonElement serialize(HSV src, Type typeOfSrc, JsonSerializationContext context) {

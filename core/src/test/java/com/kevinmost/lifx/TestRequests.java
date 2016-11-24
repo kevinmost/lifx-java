@@ -37,7 +37,7 @@ public class TestRequests extends BaseLifxTest {
   @Test public void testKelvinToHSVFidelity() {
     for (int i = KELVIN_MIN; i < KELVIN_MAX; i += 500) {
       logger.info("Testing Kelvin of {}", i);
-      final LifxColor.White kelvin = LifxColor.createKelvin(i);
+      final LifxColor.White kelvin = LifxColor.createWhite(i);
       final LifxColor.HSV calculatedHSV = kelvin.toHSV();
       final LifxColor.HSV returnedHSV = LifxRequests.verifyColor(kelvin).execute().unwrap().toHSV();
       logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
@@ -73,7 +73,7 @@ public class TestRequests extends BaseLifxTest {
     final LifxColor red = LifxColor.createRGB(255, 0, 0);
 
     final List<OperationResult> result = LifxRequests.setLights().plus(
-        Operation.forEntity(firstLight).setColor(red)
+        Operation.forEntity(firstLight).color(red).build()
     )
         .execute().unwrap();
   }

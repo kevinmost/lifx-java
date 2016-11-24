@@ -16,6 +16,12 @@ public interface LifxClient {
       this.accessToken = accessToken;
     }
 
+    public Builder(@NotNull Builder copy) {
+      this.accessToken = copy.accessToken;
+      baseURL(copy.baseURL);
+      client(copy.client);
+    }
+
     @NotNull public Builder baseURL(@NotNull HttpUrl baseURL) {
       this.baseURL = baseURL;
       return this;

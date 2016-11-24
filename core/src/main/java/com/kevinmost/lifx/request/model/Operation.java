@@ -1,5 +1,6 @@
 package com.kevinmost.lifx.request.model;
 
+import com.google.auto.value.AutoValue;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -7,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.JsonAdapter;
+import com.kevinmost.internal.Func2;
 import com.kevinmost.internal.JSONObjectBuilder;
 import com.kevinmost.internal.JsonUtil;
 import com.kevinmost.lifx.model.LifxColor;
@@ -21,96 +23,101 @@ import java.util.concurrent.TimeUnit;
 
 import static com.kevinmost.internal.Util.assertRange;
 
+@AutoValue
 @JsonAdapter(Operation.Adapter.class)
-public final class Operation {
+public abstract class Operation {
 
-  @NotNull private final Selector selector;
-
-  @Nullable private PowerState powerState;
-  @Nullable private LifxColor color;
-  @Nullable private Double brightness;
-  @Nullable private Long durationSeconds;
-  @Nullable private Double infraredBrightness;
-
-  @NotNull public static Operation forSelector(@NotNull Selector selector) {
-    return new Operation(selector);
+  @NotNull public static Operation.Builder forEntity(@NotNull LifxEntity entity) {
+    return forSelector(entity.selector());
   }
 
-  @NotNull public static Operation forEntity(@NotNull LifxEntity entity) {
-    return new Operation(entity.selector());
+  @NotNull public static Operation.Builder forSelector(@NotNull Selector selector) {
+    return new AutoValue_Operation.Builder().selector(selector);
   }
 
-  private Operation(@NotNull Selector selector) {
-    this.selector = selector;
+  @NotNull public abstract Selector selector();
+  @Nullable public abstract PowerState powerState();
+  @Nullable public abstract LifxColor color();
+  @Nullable public abstract Double brightness();
+  @Nullable public abstract Double infraredBrightness();
+
+  @Nullable public final Long durationIn(@NotNull TimeUnit unit) {
+    final Double inSeconds = duration();
+    if (inSeconds == null) {
+      return null;
+    }
+    return unit.convert(inSeconds.longValue(), TimeUnit.SECONDS);
   }
 
-  @NotNull public Operation setPowerState(@NotNull PowerState powerState) {
-    this.powerState = powerState;
-    return this;
+  @Nullable abstract Double duration();
+
+  @AutoValue.Builder
+  public static abstract class Builder {
+    @NotNull public final Builder selector(@NotNull LifxEntity entity) {
+      return selector(entity.selector());
+    }
+
+    @NotNull public abstract Builder selector(@NotNull Selector selector);
+
+    @NotNull public abstract Builder powerState(@Nullable PowerState powerState);
+    @NotNull public abstract Builder color(@Nullable LifxColor color);
+    @NotNull public abstract Builder brightness(@Nullable Double brightness);
+    @NotNull public abstract Builder infraredBrightness(@Nullable Double infraredBrightness);
+
+    @NotNull public final Builder duration(long value, @NotNull TimeUnit unit) {
+      duration((double) TimeUnit.SECONDS.convert(value, unit));
+      return this;
+    }
+
+    @NotNull abstract Builder duration(@Nullable Double duration);
+
+    @NotNull abstract Operation autoBuild();
+
+    @NotNull public final Operation build() {
+      final Operation operation = autoBuild();
+      {
+        final Double brightness = operation.brightness();
+        if (brightness != null) {
+          assertRange("brightness", brightness, 0.0, 1.0);
+        }
+      }
+      {
+        final Double infraredBrightness = operation.infraredBrightness();
+        if (infraredBrightness != null) {
+          assertRange("infraredBrightness", infraredBrightness, 0.0, 1.0);
+        }
+      }
+      {
+        final Long seconds = operation.durationIn(TimeUnit.SECONDS);
+        if (seconds != null) {
+          assertRange("duration", seconds, 0, TimeUnit.SECONDS.convert(10 * 365, TimeUnit.DAYS));
+        }
+      }
+      return operation;
+    }
   }
 
-  @NotNull public Operation setColor(@NotNull LifxColor color) {
-    this.color = color;
-    return this;
-  }
-
-  @NotNull public Operation setBrightness(double brightness) {
-    assertRange("brightness", brightness, 0.0, 1.0);
-    this.brightness = brightness;
-    return this;
-  }
-
-  @NotNull public Operation setDuration(long time, @NotNull TimeUnit unit) {
-    final long durationSeconds = unit.toSeconds(time);
-    assertRange("duration", durationSeconds, 0.0, TimeUnit.DAYS.toSeconds(100 * 365));
-    this.durationSeconds = durationSeconds;
-    return this;
-  }
-
-  @NotNull public Operation setInfraredBrightness(double infraredBrightness) {
-    assertRange("infraredBrightness", infraredBrightness, 0.0, 1.0);
-    this.infraredBrightness = infraredBrightness;
-    return this;
-  }
+  Operation() {} // AutoValue instances only
 
   static class Adapter implements JsonSerializer<Operation>, JsonDeserializer<Operation> {
 
-
     @Override
     public JsonElement serialize(Operation src, Type typeOfSrc, JsonSerializationContext context) {
-      final JSONObjectBuilder builder = new JSONObjectBuilder()
-          .add("selector", src.selector.toString());
-      {
-        final PowerState powerState = src.powerState;
-        if (powerState != null) {
-          builder.add("power", powerState == PowerState.ON ? "on" : "off");
+      final LifxColor color = src.color();
+      final PowerState powerState = src.powerState();
+      final JsonObject unfiltered = new JSONObjectBuilder()
+          .add("selector", src.selector().toString())
+          .add("power", powerState == null ? null : powerState == PowerState.ON ? "on" : "off")
+          .add("color", color == null ? null : color.toString())
+          .add("brightness", src.brightness())
+          .add("infrared", src.infraredBrightness())
+          .add("duration", src.durationIn(TimeUnit.SECONDS))
+          .build();
+      return JsonUtil.filter(unfiltered, new Func2<String, JsonElement, Boolean>() {
+        @NotNull @Override public Boolean call(@NotNull String key, @NotNull JsonElement value) {
+          return !value.isJsonNull();
         }
-      }
-      {
-        final LifxColor color = src.color;
-        if (color != null) {
-          builder.add("color", color.toString());
-        }
-      }
-      {
-        final Double brightness = src.brightness;
-        if (brightness != null) {
-          builder.add("brightness", brightness);
-        }
-      }
-      {
-        final Long durationSeconds = src.durationSeconds;
-        if (durationSeconds != null) {
-          builder.add("duration", durationSeconds);
-        }
-      }
-      {
-        final Double infraredBrightness = src.infraredBrightness;
-        if (infraredBrightness != null) {
-          builder.add("infrared", infraredBrightness);
-        }
-      }
-      return builder.build();
+      });
     }
 
     @Override public Operation deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
@@ -120,26 +127,16 @@ public final class Operation {
           root.has("power") ? JsonUtil.fromJSON(context, root.get("power"), PowerState.class) : null;
       final LifxColor color = root.has("color") ? JsonUtil.fromJSON(context, root.get("color"), LifxColor.class) : null;
       final Double brightness = root.has("brightness") ? root.get("brightness").getAsDouble() : null;
-      final Long durationSeconds = root.has("duration") ? ((long) root.get("duration").getAsDouble()) : null;
+      final Double durationSeconds = root.has("duration") ? root.get("duration").getAsDouble() : null;
       final Double infraredBrightness = root.has("infrared") ? root.get("infrared").getAsDouble() : null;
 
-      final Operation op = Operation.forSelector(Selector.unsafe(root.get("selector").getAsString()));
-      if (powerState != null) {
-        op.setPowerState(powerState);
-      }
-      if (color != null) {
-        op.setColor(color);
-      }
-      if (brightness != null) {
-        op.setBrightness(brightness);
-      }
-      if (durationSeconds != null) {
-        op.setDuration(durationSeconds, TimeUnit.SECONDS);
-      }
-      if (infraredBrightness != null) {
-        op.setBrightness(infraredBrightness);
-      }
-      return op;
+      return new AutoValue_Operation.Builder()
+          .powerState(powerState)
+          .color(color)
+          .brightness(brightness)
+          .duration(durationSeconds)
+          .infraredBrightness(infraredBrightness)
+          .build();
     }
   }
 }
