@@ -6,7 +6,6 @@ import com.kevinmost.lifx.model.Light;
 import com.kevinmost.lifx.request.LifxRequests;
 import com.kevinmost.lifx.request.model.Operation;
 import com.kevinmost.lifx.request.model.OperationResult;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -33,7 +32,6 @@ public class TestRequests extends BaseLifxTest {
     assertEquals(firstLight, sameLight);
   }
 
-  @Ignore // we know it works
   @Test public void testKelvinToHSVFidelity() {
     for (int i = KELVIN_MIN; i < KELVIN_MAX; i += 500) {
       logger.info("Testing Kelvin of {}", i);
@@ -49,7 +47,6 @@ public class TestRequests extends BaseLifxTest {
   /**
    * Tests that the .toHSV() function on RGB colors is accurate for many RGB colors
    */
-  @Ignore // this takes so long, we know it works now
   @Test public void testRGBToHSVFidelity() {
     int max = 255;
     int increments = 30;
