@@ -123,9 +123,8 @@ public abstract class Operation {
     @Override public Operation deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
       final JsonObject root = json.getAsJsonObject();
 
-      final PowerState powerState =
-          root.has("power") ? JsonUtil.fromJSON(context, root.get("power"), PowerState.class) : null;
-      final LifxColor color = root.has("color") ? JsonUtil.fromJSON(context, root.get("color"), LifxColor.class) : null;
+      final PowerState powerState = JsonUtil.fromJSON(context, root.get("power"), PowerState.class);
+      final LifxColor color = JsonUtil.fromJSON(context, root.get("color"), LifxColor.class);
       final Double brightness = root.has("brightness") ? root.get("brightness").getAsDouble() : null;
       final Double durationSeconds = root.has("duration") ? root.get("duration").getAsDouble() : null;
       final Double infraredBrightness = root.has("infrared") ? root.get("infrared").getAsDouble() : null;
