@@ -11,8 +11,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.kevinmost.lifx.model.LifxColor.White.KELVIN_MAX;
-import static com.kevinmost.lifx.model.LifxColor.White.KELVIN_MIN;
 import static org.junit.Assert.assertEquals;
 
 public class TestRequests extends BaseLifxTest {
@@ -33,23 +31,9 @@ public class TestRequests extends BaseLifxTest {
     assertEquals(firstLight, sameLight);
   }
 
-  @Ignore // this test takes forever and we've already verified it
-  @Test public void testKelvinToHSVFidelity() {
-    for (int i = KELVIN_MIN; i < KELVIN_MAX; i += 500) {
-      logger.info("Testing Kelvin of {}", i);
-      final LifxColor.White kelvin = LifxColor.createWhite(i);
-      final LifxColor.HSV calculatedHSV = kelvin.toHSV();
-      final LifxColor.HSV returnedHSV = LifxRequests.verifyColor(kelvin).execute().unwrap().toHSV();
-      logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
-      assertEquals(returnedHSV, calculatedHSV);
-      Util.sleep(1000); // rate limits are 60/min
-    }
-  }
-
   /**
    * Tests that the .toHSV() function on RGB colors is accurate for many RGB colors
    */
-  @Ignore // this test takes forever and we've already verified it
   @Test public void testRGBToHSVFidelity() {
     int max = 255;
     int increments = 30;
@@ -57,9 +41,9 @@ public class TestRequests extends BaseLifxTest {
       for (int g = 0; g < max; g += increments) {
         for (int b = 0; b < max; b += increments) {
           logger.info("Testing RGB of {},{},{}", r, g, b);
-          final LifxColor.RGB rgb = LifxColor.createRGB(r, g, b);
-          final LifxColor.HSV calculatedHSV = rgb.toHSV();
-          final LifxColor returnedHSV = LifxRequests.verifyColor(rgb).execute().unwrap();
+          final LifxColor calculatedHSV = LifxColor.forRGB(r, g, b);
+          final LifxColor returnedHSV =
+              LifxRequests.verifyColor(String.format("rgb:%d,%d,%d", r, g, b)).execute().unwrap();
           logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
           assertEquals(returnedHSV, calculatedHSV);
           Util.sleep(1000); // rate limits are 60/min
@@ -71,7 +55,7 @@ public class TestRequests extends BaseLifxTest {
   @Ignore // this test takes forever and we've already verified it
   @Test public void testMakeLightsRed() {
     final Light firstLight = LifxRequests.listLights().execute().unwrap().get(0);
-    final LifxColor red = LifxColor.createRGB(255, 0, 0);
+    final LifxColor red = LifxColor.forRGB(255, 0, 0);
 
     final List<OperationResult> result = LifxRequests.setLights().plus(
         Operation.forEntity(firstLight).color(red).build()
