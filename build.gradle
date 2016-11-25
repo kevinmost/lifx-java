@@ -51,6 +51,13 @@ subprojects {
         "com.squareup.okhttp3:logging-interceptor:$versions.okhttp",
     )
   }
+  //noinspection GroovyMissingReturnStatement
+  test {
+    testLogging {
+      exceptionFormat = 'full'
+      showStandardStreams = true
+    }
+  }
 }
 
 task wrapper(type: Wrapper) {
