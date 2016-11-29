@@ -1,8 +1,11 @@
 package com.kevinmost.internal;
 
+import com.kevinmost.lifx.model.LifxColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Util {
 
@@ -86,5 +89,44 @@ public class Util {
 
   public static double roundTo2Places(double in) {
     return Double.parseDouble(TWO_DECIMAL_PLACES.format(in));
+  }
+
+  @NotNull public static String joinToString(@NotNull Iterable<String> strings, @NotNull String join) {
+    final StringBuilder sb = new StringBuilder();
+    for (final String string : strings) {
+      sb.append(string).append(join);
+    }
+    sb.setLength(sb.length() - join.length());
+    return sb.toString();
+  }
+
+  @NotNull public static <T> List<T> filter(@NotNull Iterable<T> in, @NotNull Func1<T, Boolean> predicate) {
+    final List<T> out = new ArrayList<>();
+    for (final T element : in) {
+      if (predicate.call(element)) {
+        out.add(element);
+      }
+    }
+    return out;
+  }
+
+  @NotNull public static LifxColor parseColor(@NotNull String in) {
+    final String[] splits = in.trim().split("\\s+");
+    final LifxColor.Builder builder = LifxColor.builder();
+    for (final String split : splits) {
+      final String value = split.substring(split.indexOf(':') + 1);
+      if (split.startsWith("hue")) {
+        builder.hue(Double.valueOf(value));
+      } else if (split.startsWith("saturation")) {
+        builder.saturation(Double.valueOf(value));
+      } else if (split.startsWith("brightness")) {
+        builder.brightness(Double.valueOf(value));
+      } else if (split.startsWith("kelvin")) {
+        builder.kelvin(Integer.parseInt(value));
+      } else {
+        throw new IllegalStateException("Unknown option in color-string: " + split);
+      }
+    }
+    return builder.build();
   }
 }

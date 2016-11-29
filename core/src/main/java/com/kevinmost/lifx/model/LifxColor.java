@@ -14,10 +14,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.kevinmost.internal.JsonUtil.notNull;
 import static com.kevinmost.internal.Util.assertRange;
 import static com.kevinmost.internal.Util.posModulo;
-import static com.kevinmost.internal.Util.round;
 
 @JsonAdapter(LifxColor.Adapter.class)
 @AutoValue
@@ -30,7 +32,11 @@ public abstract class LifxColor {
     return new AutoValue_LifxColor.Builder();
   }
 
-  @NotNull public static LifxColor forRGB(int r, int g, int b) {
+  @NotNull public static LifxColor white(int kelvin) {
+    return builder().kelvin(kelvin).build();
+  }
+
+  @NotNull public static LifxColor rgb(int r, int g, int b) {
     assertRange("r", r, RGB_MIN, RGB_MAX);
     assertRange("g", g, RGB_MIN, RGB_MAX);
     assertRange("b", b, RGB_MIN, RGB_MAX);
@@ -42,7 +48,7 @@ public abstract class LifxColor {
     final double cMin = Util.min(rPrime, gPrime, bPrime);
     final double delta = cMax - cMin;
 
-    final int hue;
+    final double hue;
     {
       final double huePrime;
       if (cMax == rPrime) {
@@ -54,7 +60,7 @@ public abstract class LifxColor {
       } else {
         throw new AssertionError("cMax must be equal to either rPrime, gPrime, or bPrime");
       }
-      hue = round(posModulo(60 * huePrime, 360.0));
+      hue = posModulo(60 * huePrime, 360.0);
     }
 
     final double saturation = (cMax == 0) ? 0 : (delta / cMax);
@@ -63,25 +69,25 @@ public abstract class LifxColor {
     final double brightness = cMax;
 
     return builder()
-        .hue(hue)
+        .hue(Double.isNaN(hue) ? 0 : hue)
         .brightness(brightness)
         .saturation(saturation)
         .build();
   }
 
-  @NotNull public abstract LifxColor withHue(@Nullable Integer hue);
+  @NotNull public abstract LifxColor withHue(@Nullable Double hue);
   @NotNull public abstract LifxColor withSaturation(@Nullable Double saturation);
   @NotNull public abstract LifxColor withBrightness(@Nullable Double brightness);
   @NotNull public abstract LifxColor withKelvin(@Nullable Integer kelvin);
 
-  @Nullable public abstract Integer hue();
+  @Nullable public abstract Double hue();
   @Nullable public abstract Double saturation();
   @Nullable public abstract Double brightness();
   @Nullable public abstract Integer kelvin();
 
   @AutoValue.Builder
   public static abstract class Builder {
-    @NotNull public abstract Builder hue(@Nullable Integer hue);
+    @NotNull public abstract Builder hue(@Nullable Double hue);
     @NotNull public abstract Builder saturation(@Nullable Double saturation);
     @NotNull public abstract Builder brightness(@Nullable Double brightness);
     @NotNull public abstract Builder kelvin(@Nullable Integer kelvin);
@@ -90,9 +96,9 @@ public abstract class LifxColor {
     @NotNull public final LifxColor build() {
       final LifxColor color = autoBuild();
       {
-        final Integer hue = color.hue();
+        final Double hue = color.hue();
         if (hue != null) {
-          assertRange("hue", hue, 0, 360);
+          assertRange("hue", hue, 0.0, 360.0);
         }
       }
       {
@@ -117,6 +123,35 @@ public abstract class LifxColor {
     }
   }
 
+  @Override public String toString() {
+    final List<String> strings = new ArrayList<>();
+    {
+      final Double hue = hue();
+      if (hue != null) {
+        strings.add("hue:" + hue);
+      }
+    }
+    {
+      final Double saturation = saturation();
+      if (saturation != null) {
+        strings.add("saturation:" + saturation);
+      }
+    }
+    {
+      final Double brightness = brightness();
+      if (brightness != null) {
+        strings.add("brightness:" + brightness);
+      }
+    }
+    {
+      final Integer kelvin = kelvin();
+      if (kelvin != null) {
+        strings.add("kelvin:" + kelvin);
+      }
+    }
+    return Util.joinToString(strings, " ");
+  }
+
   LifxColor() {} // AutoValue instances only
 
   static class Adapter implements JsonSerializer<LifxColor>, JsonDeserializer<LifxColor> {
@@ -129,34 +164,26 @@ public abstract class LifxColor {
           final int r = Integer.parseInt(components[0]);
           final int g = Integer.parseInt(components[1]);
           final int b = Integer.parseInt(components[2]);
-          return forRGB(r, g, b);
+          return rgb(r, g, b);
         }
       }
-      final JsonObject root = json.getAsJsonObject();
-      builder()
-          .brightness(root.)
-          .build();
-      if (json.isJsonObject()) {
+      final JsonElement hue;
+      final JsonElement saturation;
+      final JsonElement brightness;
+      final JsonElement kelvin;
+      {
         final JsonObject root = json.getAsJsonObject();
-        if (root.has("kelvin") && !root.get("kelvin").isJsonNull()) {
-          type = White.class;
-        } else {
-          type = HSV.class;
-        }
-      } else {
-        final String string = json.getAsJsonPrimitive().getAsString();
-        if (string.contains("kelvin")) {
-          type = White.class;
-        } else if (string.contains("hue")) {
-          type = HSV.class;
-        } else if (string.contains("rgb") || string.startsWith("#")) {
-          type = RGB.class;
-        } else {
-          throw new IllegalArgumentException("Unknown LifxColor: " + json);
-        }
+        hue = root.get("hue");
+        saturation = root.get("saturation");
+        brightness = root.get("brightness");
+        kelvin = root.get("kelvin");
       }
-      return context.deserialize(json, type);
-
+      return builder()
+          .hue(notNull(hue) ? hue.getAsDouble() : null)
+          .saturation(notNull(saturation) ? saturation.getAsDouble() : null)
+          .brightness(notNull(brightness) ? brightness.getAsDouble() : null)
+          .kelvin(notNull(kelvin) ? kelvin.getAsInt() : null)
+          .build();
     }
 
     @Override public JsonElement serialize(LifxColor src, Type typeOfSrc, JsonSerializationContext context) {

@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.reflect.TypeToken;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -23,6 +24,22 @@ public final class JsonUtil {
 
   @NotNull public static RequestBody toRequestBody(@NotNull Gson gson, @NotNull JsonElement json) {
     return RequestBody.create(MEDIA_TYPE_JSON, gson.toJson(json));
+  }
+
+  @NotNull
+  public static <T> JsonElement toJSON(
+      @NotNull JsonSerializationContext context,
+      @NotNull T src,
+      @NotNull Class<T> type) {
+    return context.serialize(src, type);
+  }
+
+  @NotNull
+  public static <T> JsonElement toJSON(
+      @NotNull JsonSerializationContext context,
+      @NotNull T src,
+      @NotNull TypeToken<T> type) {
+    return context.serialize(src, type.getType());
   }
 
   @NotNull public static <T> JsonElement toJSON(@NotNull Gson gson, @NotNull T src, @NotNull Class<T> type) {
