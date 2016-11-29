@@ -11,6 +11,5 @@ dependencies {
   apt(
       "com.google.auto.value:auto-value:$versions.autoValue",
       "com.github.kevinmost.auto-value-custom-hashcode-equals:processor:$versions.customHashCodeEquals",
-      "com.gabrielittner.auto.value:auto-value-with:1.0.0",
   )
 }

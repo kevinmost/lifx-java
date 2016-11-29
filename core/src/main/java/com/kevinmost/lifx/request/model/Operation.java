@@ -11,7 +11,6 @@ import com.google.gson.annotations.JsonAdapter;
 import com.kevinmost.internal.Func2;
 import com.kevinmost.internal.JSONObjectBuilder;
 import com.kevinmost.internal.JsonUtil;
-import com.kevinmost.internal.Util;
 import com.kevinmost.lifx.model.LifxColor;
 import com.kevinmost.lifx.model.LifxEntity;
 import com.kevinmost.lifx.model.PowerState;
@@ -125,7 +124,7 @@ public abstract class Operation {
       final JsonObject root = json.getAsJsonObject();
 
       final PowerState powerState = JsonUtil.fromJSON(context, root.get("power"), PowerState.class);
-      final LifxColor color = root.has("color") ? Util.parseColor(root.get("color").getAsString()) : null;
+
       final Double brightness = root.has("brightness") ? root.get("brightness").getAsDouble() : null;
       final Double durationSeconds = root.has("duration") ? root.get("duration").getAsDouble() : null;
       final Double infraredBrightness = root.has("infrared") ? root.get("infrared").getAsDouble() : null;
@@ -133,7 +132,7 @@ public abstract class Operation {
       return new AutoValue_Operation.Builder()
           .selector(Selector.unsafe(root.get("selector").getAsString()))
           .powerState(powerState)
-          .color(color)
+          .color(JsonUtil.fromJSON(context, root.get("color"), LifxColor.class))
           .brightness(brightness)
           .duration(durationSeconds)
           .infraredBrightness(infraredBrightness)

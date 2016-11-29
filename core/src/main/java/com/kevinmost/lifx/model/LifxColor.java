@@ -4,12 +4,12 @@ import com.google.auto.value.AutoValue;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.JsonAdapter;
-import com.kevinmost.internal.JSONObjectBuilder;
 import com.kevinmost.internal.Util;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,7 +17,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.kevinmost.internal.JsonUtil.notNull;
 import static com.kevinmost.internal.Util.assertRange;
 import static com.kevinmost.internal.Util.posModulo;
 
@@ -28,12 +27,16 @@ public abstract class LifxColor {
   public static final int RGB_MIN = 0;
   public static final int RGB_MAX = 255;
 
-  @NotNull public static Builder builder() {
-    return new AutoValue_LifxColor.Builder();
+  @NotNull public static LifxColor create() {
+    return new AutoValue_LifxColor.Builder().build();
   }
 
   @NotNull public static LifxColor white(int kelvin) {
-    return builder().kelvin(kelvin).build();
+    return create().withKelvin(kelvin);
+  }
+
+  @NotNull public static LifxColor hsv(double h, double s, double v) {
+    return create().withHue(h).withSaturation(s).withBrightness(v);
   }
 
   @NotNull public static LifxColor rgb(int r, int g, int b) {
@@ -68,59 +71,64 @@ public abstract class LifxColor {
     //noinspection UnnecessaryLocalVariable
     final double brightness = cMax;
 
-    return builder()
-        .hue(Double.isNaN(hue) ? 0 : hue)
-        .brightness(brightness)
-        .saturation(saturation)
-        .build();
+    return create()
+        .withHue(hue)
+        .withSaturation(saturation)
+        .withBrightness(brightness)
+        ;
   }
 
-  @NotNull public abstract LifxColor withHue(@Nullable Double hue);
-  @NotNull public abstract LifxColor withSaturation(@Nullable Double saturation);
-  @NotNull public abstract LifxColor withBrightness(@Nullable Double brightness);
-  @NotNull public abstract LifxColor withKelvin(@Nullable Integer kelvin);
+  @Contract(pure = true) @NotNull public final LifxColor withHue(@Nullable Double hue) {
+    if (hue == null) {
+      return this;
+    }
+    assertRange("hue", hue, 0, 360);
+    return toBuilder().hue(Util.round(hue, 13)).build();
+  }
+
+  @Contract(pure = true) @NotNull public final LifxColor withSaturation(@Nullable Double saturation) {
+    if (saturation == null) {
+      return this;
+    }
+    assertRange("saturation", saturation, 0, 1);
+    return toBuilder().saturation(Util.round(saturation, 13)).build();
+  }
+
+  @Contract(pure = true) @NotNull public final LifxColor withBrightness(@Nullable Double brightness) {
+    if (brightness == null) {
+      return this;
+    }
+    assertRange("brightness", brightness, 0, 1);
+    return toBuilder().brightness(Util.round(brightness, 13)).build();
+  }
+
+  @Contract(pure = true) @NotNull public final LifxColor withKelvin(@Nullable Integer kelvin) {
+    if (kelvin == null) {
+      return this;
+    }
+    assertRange("kelvin", kelvin, 2500, 9000);
+    return toBuilder().kelvin(kelvin).build();
+  }
 
   @Nullable public abstract Double hue();
   @Nullable public abstract Double saturation();
   @Nullable public abstract Double brightness();
   @Nullable public abstract Integer kelvin();
 
-  @AutoValue.Builder
-  public static abstract class Builder {
-    @NotNull public abstract Builder hue(@Nullable Double hue);
-    @NotNull public abstract Builder saturation(@Nullable Double saturation);
-    @NotNull public abstract Builder brightness(@Nullable Double brightness);
-    @NotNull public abstract Builder kelvin(@Nullable Integer kelvin);
-    @NotNull abstract LifxColor autoBuild();
+  @NotNull abstract Builder toBuilder();
 
-    @NotNull public final LifxColor build() {
-      final LifxColor color = autoBuild();
-      {
-        final Double hue = color.hue();
-        if (hue != null) {
-          assertRange("hue", hue, 0.0, 360.0);
-        }
-      }
-      {
-        final Double saturation = color.saturation();
-        if (saturation != null) {
-          assertRange("saturation", saturation, 0.0, 1.0);
-        }
-      }
-      {
-        final Double brightness = color.brightness();
-        if (brightness != null) {
-          assertRange("brightness", brightness, 0.0, 1.0);
-        }
-      }
-      {
-        final Integer kelvin = color.kelvin();
-        if (kelvin != null) {
-          assertRange("kelvin", kelvin, 2500, 9000);
-        }
-      }
-      return color;
-    }
+
+  /**
+   * The user should not be able to access this class; we need to validate the ranges of whatever values they put in,
+   * and make sure that we coerce it to 13 decimal places (the highest precision we get back from the LiFX API)
+   */
+  @AutoValue.Builder
+  static abstract class Builder {
+    @NotNull abstract Builder hue(@Nullable Double hue);
+    @NotNull abstract Builder saturation(@Nullable Double saturation);
+    @NotNull abstract Builder brightness(@Nullable Double brightness);
+    @NotNull abstract Builder kelvin(@Nullable Integer kelvin);
+    @NotNull abstract LifxColor build();
   }
 
   @Override public String toString() {
@@ -157,42 +165,28 @@ public abstract class LifxColor {
   static class Adapter implements JsonSerializer<LifxColor>, JsonDeserializer<LifxColor> {
 
     @Override public LifxColor deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
-      if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
-        final String string = json.getAsJsonPrimitive().getAsString();
-        if (string.contains("rgb")) {
-          final String[] components = string.substring(string.indexOf(':') + 1).split(",");
-          final int r = Integer.parseInt(components[0]);
-          final int g = Integer.parseInt(components[1]);
-          final int b = Integer.parseInt(components[2]);
-          return rgb(r, g, b);
+      final String rawString = json.getAsJsonPrimitive().getAsString();
+      final String[] splits = rawString.trim().split("\\s+");
+      LifxColor color = LifxColor.create();
+      for (final String split : splits) {
+        final String value = split.substring(split.indexOf(':') + 1);
+        if (split.startsWith("hue")) {
+          color = color.withHue(Double.valueOf(value));
+        } else if (split.startsWith("saturation")) {
+          color = color.withSaturation(Double.valueOf(value));
+        } else if (split.startsWith("brightness")) {
+          color = color.withBrightness(Double.valueOf(value));
+        } else if (split.startsWith("kelvin")) {
+          color = color.withKelvin(Integer.parseInt(value));
+        } else {
+          throw new IllegalStateException("Unknown option in color-string: " + split);
         }
       }
-      final JsonElement hue;
-      final JsonElement saturation;
-      final JsonElement brightness;
-      final JsonElement kelvin;
-      {
-        final JsonObject root = json.getAsJsonObject();
-        hue = root.get("hue");
-        saturation = root.get("saturation");
-        brightness = root.get("brightness");
-        kelvin = root.get("kelvin");
-      }
-      return builder()
-          .hue(notNull(hue) ? hue.getAsDouble() : null)
-          .saturation(notNull(saturation) ? saturation.getAsDouble() : null)
-          .brightness(notNull(brightness) ? brightness.getAsDouble() : null)
-          .kelvin(notNull(kelvin) ? kelvin.getAsInt() : null)
-          .build();
+      return color;
     }
 
     @Override public JsonElement serialize(LifxColor src, Type typeOfSrc, JsonSerializationContext context) {
-      return new JSONObjectBuilder()
-          .add("hue", src.hue())
-          .add("saturation", src.saturation())
-          .add("kelvin", src.kelvin())
-          .add("brightness", src.brightness())
-          .build();
+      return new JsonPrimitive(src.toString());
     }
   }
 }
