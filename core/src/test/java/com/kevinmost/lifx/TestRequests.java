@@ -34,21 +34,18 @@ public class TestRequests extends BaseLifxTest {
   @Test public void testRGBToHSVFidelity() {
     int max = 255;
     int increments = 30;
-    int r = 210;
-    int g = 0;
-    int b = 30;
-//    for (int r = 0; r < max; r += increments) {
-//      for (int g = 0; g < max; g += increments) {
-//        for (int b = 0; b < max; b += increments) {
-    logger.info("Testing RGB of {},{},{}", r, g, b);
-    final LifxColor calculatedHSV = LifxColor.rgb(r, g, b);
-    final LifxColor returnedHSV =
-        LifxRequests.verifyColor(String.format("rgb:%d,%d,%d", r, g, b)).execute().unwrap();
-    logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
-    assertEquals(returnedHSV, calculatedHSV);
-    Util.sleep(1000); // rate limits are 60/min
-//        }
-//      }
-//    }
+    for (int r = 0; r < max; r += increments) {
+      for (int g = 0; g < max; g += increments) {
+        for (int b = 0; b < max; b += increments) {
+          logger.info("Testing RGB of {},{},{}", r, g, b);
+          final LifxColor calculatedHSV = LifxColor.rgb(r, g, b);
+          final LifxColor returnedHSV =
+              LifxRequests.verifyColor(String.format("rgb:%d,%d,%d", r, g, b)).execute().unwrap();
+          logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
+          assertEquals(returnedHSV, calculatedHSV);
+          Util.sleep(1000); // rate limits are 60/min
+        }
+      }
+    }
   }
 }
