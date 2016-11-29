@@ -3,10 +3,7 @@ package com.kevinmost.lifx;
 import com.kevinmost.internal.Util;
 import com.kevinmost.lifx.model.LifxColor;
 import com.kevinmost.lifx.model.Light;
-import com.kevinmost.lifx.model.Selector;
 import com.kevinmost.lifx.request.LifxRequests;
-import com.kevinmost.lifx.request.model.Operation;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -53,23 +50,5 @@ public class TestRequests extends BaseLifxTest {
 //        }
 //      }
 //    }
-  }
-
-  @Ignore // this test takes forever and we've already verified it
-  @Test public void testMakeLightsRed() {
-//    final Light firstLight = LifxRequests.listLights().execute().unwrap().get(0);
-//    final LifxColor red = LifxColor.rgb(255, 0, 0);
-//
-//    final List<OperationResult> result = LifxRequests.setLights().plus(
-//        Operation.forEntity(firstLight).color(red).build()
-//    )
-//        .execute().unwrap();
-
-    LifxRequests.setLights().plus(
-        Operation.forSelector(Selector.forGroup("Bedroom"))
-//            .color(LifxColor.white(4000))
-            .brightness(0.30)
-            .build()
-    ).execute().unwrap();
   }
 }

@@ -4,10 +4,12 @@ import com.google.auto.value.AutoValue;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.JsonAdapter;
+import com.kevinmost.internal.JsonUtil;
 import com.kevinmost.internal.Util;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -165,24 +167,42 @@ public abstract class LifxColor {
   static class Adapter implements JsonSerializer<LifxColor>, JsonDeserializer<LifxColor> {
 
     @Override public LifxColor deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
-      final String rawString = json.getAsJsonPrimitive().getAsString();
-      final String[] splits = rawString.trim().split("\\s+");
-      LifxColor color = LifxColor.create();
-      for (final String split : splits) {
-        final String value = split.substring(split.indexOf(':') + 1);
-        if (split.startsWith("hue")) {
-          color = color.withHue(Double.valueOf(value));
-        } else if (split.startsWith("saturation")) {
-          color = color.withSaturation(Double.valueOf(value));
-        } else if (split.startsWith("brightness")) {
-          color = color.withBrightness(Double.valueOf(value));
-        } else if (split.startsWith("kelvin")) {
-          color = color.withKelvin(Integer.parseInt(value));
-        } else {
-          throw new IllegalStateException("Unknown option in color-string: " + split);
+      if (json.isJsonPrimitive()) {
+        final String rawString = json.getAsJsonPrimitive().getAsString();
+        final String[] splits = rawString.trim().split("\\s+");
+        LifxColor color = LifxColor.create();
+        for (final String split : splits) {
+          final String value = split.substring(split.indexOf(':') + 1);
+          if (split.startsWith("hue")) {
+            color = color.withHue(Double.valueOf(value));
+          } else if (split.startsWith("saturation")) {
+            color = color.withSaturation(Double.valueOf(value));
+          } else if (split.startsWith("brightness")) {
+            color = color.withBrightness(Double.valueOf(value));
+          } else if (split.startsWith("kelvin")) {
+            color = color.withKelvin(Integer.parseInt(value));
+          } else {
+            throw new IllegalStateException("Unknown option in color-string: " + split);
+          }
         }
+        return color;
+      } else {
+        final JsonObject root = json.getAsJsonObject();
+        LifxColor color = LifxColor.create();
+        if (JsonUtil.notNull(root.get("hue"))) {
+          color = color.withHue(root.get("hue").getAsDouble());
+        }
+        if (JsonUtil.notNull(root.get("saturation"))) {
+          color = color.withSaturation(root.get("saturation").getAsDouble());
+        }
+        if (JsonUtil.notNull(root.get("brightness"))) {
+          color = color.withBrightness(root.get("brightness").getAsDouble());
+        }
+        if (JsonUtil.notNull(root.get("kelvin"))) {
+          color = color.withKelvin(root.get("kelvin").getAsInt());
+        }
+        return color;
       }
-      return color;
     }
 
     @Override public JsonElement serialize(LifxColor src, Type typeOfSrc, JsonSerializationContext context) {

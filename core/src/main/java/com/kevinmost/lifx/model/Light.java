@@ -51,7 +51,7 @@ public abstract class Light implements LifxEntity {
           root.get("label").getAsString(),
           root.get("connected").getAsBoolean(),
           JsonUtil.fromJSON(context, root.get("power"), PowerState.class),
-          JsonUtil.fromJSON(context, root, LifxColor.class),
+          JsonUtil.fromJSON(context, root.get("color"), LifxColor.class),
           infrared,
           root.get("brightness").getAsDouble(),
           JsonUtil.fromJSON(context, root.get("group"), LifxGroup.class),
