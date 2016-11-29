@@ -74,7 +74,7 @@ public abstract class LifxColor {
     final double brightness = cMax;
 
     return create()
-        .withHue(hue)
+        .withHue(Double.isNaN(hue) ? 0 : hue)
         .withSaturation(saturation)
         .withBrightness(brightness)
         ;
