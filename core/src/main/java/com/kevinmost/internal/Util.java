@@ -43,6 +43,13 @@ public class Util {
     return min;
   }
 
+  @Contract("null -> fail") @NotNull public static <T> T assertNotNull(@Nullable T in) {
+    if (in == null) {
+      throw new NullPointerException();
+    }
+    return in;
+  }
+
   public static double assertRange(String label, double value, double min, double max) {
     if (value < min || value > max) {
       throw new IllegalArgumentException(String.format("%s must be between %f and %f. Value was: %f",
@@ -82,7 +89,7 @@ public class Util {
       return null;
     }
     return new BigDecimal(in)
-        .setScale(places, RoundingMode.HALF_UP)
+        .setScale(places, RoundingMode.HALF_EVEN)
         .doubleValue();
   }
 

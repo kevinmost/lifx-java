@@ -26,8 +26,19 @@ import static com.kevinmost.internal.Util.posModulo;
 @AutoValue
 public abstract class LifxColor {
 
-  public static final int RGB_MIN = 0;
-  public static final int RGB_MAX = 255;
+  private static final int RGB_MIN = 0;
+  private static final int RGB_MAX = 255;
+
+  @NotNull public static final LifxColor WHITE = hsv(null, 0.0, null);
+  @NotNull public static final LifxColor RED = hsv(0.0, 1.0, null);
+  @NotNull public static final LifxColor ORANGE = hsv(36.0, 1.0, null);
+  @NotNull public static final LifxColor YELLOW = hsv(60.0, 1.0, null);
+  @NotNull public static final LifxColor GREEN = hsv(120.0, 1.0, null);
+  @NotNull public static final LifxColor CYAN = hsv(180.0, 1.0, null);
+  @NotNull public static final LifxColor BLUE = hsv(250.0, 1.0, null);
+  @NotNull public static final LifxColor PURPLE = hsv(280.0, 1.0, null);
+  @NotNull public static final LifxColor PINK = hsv(325.0, 1.0, null);
+
 
   @NotNull public static LifxColor create() {
     return new AutoValue_LifxColor.Builder().build();
@@ -37,7 +48,7 @@ public abstract class LifxColor {
     return create().withKelvin(kelvin);
   }
 
-  @NotNull public static LifxColor hsv(double h, double s, double v) {
+  @NotNull public static LifxColor hsv(@Nullable Double h, @Nullable Double s, @Nullable Double v) {
     return create().withHue(h).withSaturation(s).withBrightness(v);
   }
 

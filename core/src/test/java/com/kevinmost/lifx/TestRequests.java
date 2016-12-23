@@ -42,7 +42,9 @@ public class TestRequests extends BaseLifxTest {
           final LifxColor returnedHSV =
               LifxRequests.verifyColor(String.format("rgb:%d,%d,%d", r, g, b)).execute().unwrap();
           logger.info("Server-calculated HSV: {}\n Our calculated HSV: {}", returnedHSV, calculatedHSV);
-          assertEquals(returnedHSV, calculatedHSV);
+          assertFuzzyEquals(returnedHSV.hue(), calculatedHSV.hue());
+          assertFuzzyEquals(returnedHSV.saturation(), calculatedHSV.saturation());
+          assertFuzzyEquals(returnedHSV.brightness(), calculatedHSV.brightness());
           Util.sleep(1000); // rate limits are 60/min
         }
       }
