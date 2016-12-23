@@ -1,12 +1,15 @@
 package com.kevinmost.internal;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.text.DecimalFormat;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Util {
-
-  @NotNull private static final DecimalFormat TWO_DECIMAL_PLACES = new DecimalFormat("#.##");
 
   private Util() { throw new UnsupportedOperationException("No instances"); }
 
@@ -40,14 +43,11 @@ public class Util {
     return min;
   }
 
-  public static double clamp(double value, double min, double max) {
-    return (value < min) ? min
-        : (value > max) ? max
-            : value;
-  }
-
-  public static int round(double value) {
-    return (int) Math.round(value);
+  @Contract("null -> fail") @NotNull public static <T> T assertNotNull(@Nullable T in) {
+    if (in == null) {
+      throw new NullPointerException();
+    }
+    return in;
   }
 
   public static double assertRange(String label, double value, double min, double max) {
@@ -84,7 +84,31 @@ public class Util {
     return result >= 0 ? result : result + mod;
   }
 
-  public static double roundTo2Places(double in) {
-    return Double.parseDouble(TWO_DECIMAL_PLACES.format(in));
+  @Contract("null, _ -> null") public static Double round(@Nullable Double in, int places) {
+    if (in == null) {
+      return null;
+    }
+    return new BigDecimal(in)
+        .setScale(places, RoundingMode.HALF_EVEN)
+        .doubleValue();
+  }
+
+  @NotNull public static String joinToString(@NotNull Iterable<String> strings, @NotNull String join) {
+    final StringBuilder sb = new StringBuilder();
+    for (final String string : strings) {
+      sb.append(string).append(join);
+    }
+    sb.setLength(sb.length() - join.length());
+    return sb.toString();
+  }
+
+  @NotNull public static <T> List<T> filter(@NotNull Iterable<T> in, @NotNull Func1<T, Boolean> predicate) {
+    final List<T> out = new ArrayList<>();
+    for (final T element : in) {
+      if (predicate.call(element)) {
+        out.add(element);
+      }
+    }
+    return out;
   }
 }

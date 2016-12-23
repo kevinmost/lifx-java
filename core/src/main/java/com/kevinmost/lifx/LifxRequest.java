@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.kevinmost.internal.JsonUtil;
+import com.kevinmost.internal.Util;
 import com.kevinmost.lifx.model.LifxError;
 import okhttp3.HttpUrl;
 import okhttp3.Request;
@@ -57,7 +58,7 @@ public interface LifxRequest<T> {
       if (json.isJsonObject()) {
         final JsonObject root = json.getAsJsonObject();
         errors = root.has("errors")
-            ? JsonUtil.fromJSON(clientImpl.gson, root.get("errors"), new TypeToken<List<LifxError>>() {})
+            ? Util.assertNotNull(JsonUtil.fromJSON(clientImpl.gson, root.get("errors"), new TypeToken<List<LifxError>>() {}))
             : Collections.<LifxError>emptyList();
       } else {
         errors = Collections.emptyList();

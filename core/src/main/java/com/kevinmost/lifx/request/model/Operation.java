@@ -124,7 +124,7 @@ public abstract class Operation {
       final JsonObject root = json.getAsJsonObject();
 
       final PowerState powerState = JsonUtil.fromJSON(context, root.get("power"), PowerState.class);
-      final LifxColor color = JsonUtil.fromJSON(context, root.get("color"), LifxColor.class);
+
       final Double brightness = root.has("brightness") ? root.get("brightness").getAsDouble() : null;
       final Double durationSeconds = root.has("duration") ? root.get("duration").getAsDouble() : null;
       final Double infraredBrightness = root.has("infrared") ? root.get("infrared").getAsDouble() : null;
@@ -132,7 +132,7 @@ public abstract class Operation {
       return new AutoValue_Operation.Builder()
           .selector(Selector.unsafe(root.get("selector").getAsString()))
           .powerState(powerState)
-          .color(color)
+          .color(JsonUtil.fromJSON(context, root.get("color"), LifxColor.class))
           .brightness(brightness)
           .duration(durationSeconds)
           .infraredBrightness(infraredBrightness)

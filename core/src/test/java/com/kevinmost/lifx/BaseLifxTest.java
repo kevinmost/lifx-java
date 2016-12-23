@@ -3,6 +3,8 @@ package com.kevinmost.lifx;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,4 +31,13 @@ public abstract class BaseLifxTest {
         .buildAsDefault();
   }
 
+  protected void assertFuzzyEquals(@Nullable Double d1, @Nullable Double d2) {
+    if (d1 == null) {
+      Assert.assertNull(d2);
+    } else if (d2 == null){
+      Assert.fail();
+    } else {
+      Assert.assertEquals(d1, d2, 0.00001);
+    }
+  }
 }
